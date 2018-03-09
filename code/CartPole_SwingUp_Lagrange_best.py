@@ -15,8 +15,6 @@ if __name__ == "__main__":
     py = cp_data['py']
     phi = np.arctan2(py, px) * 180 / np.pi
 
-    print(len(cx))
-
     T = 16.65
     dt = T / len(cx)
     t = np.linspace(0, T, len(cx))
@@ -79,6 +77,7 @@ if __name__ == "__main__":
     ax1.set_xlabel('time [s]')
     ax1.set_ylabel('normalized cart_x position')
     ax2.set_ylabel('phi [degrees]')
+    ax1.set_title('maximum reward: {0}'.format(cp_data['reward'].data[-1]))
 
     # plot FFT
     ax3.plot(x_cx_fft_2[1:], 2 / N2 * np.abs(cx_fft_2[1:N2 // 2]), lw=2, label='FFT of cartpole_x')
