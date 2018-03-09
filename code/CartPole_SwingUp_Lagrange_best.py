@@ -7,7 +7,7 @@ from scipy.fftpack import fft
 if __name__ == "__main__":
 
     # read data
-    fp_cp_data = "../data/CartPoleData.xlsx"
+    fp_cp_data = "../data/preprocessed/CartPoleData.xlsx"
     cp_data = pd.read_excel(io=fp_cp_data, sheet_name=0, header=0, index_col=0)
 
     cx = cp_data['cx']
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     ax1.axvline(x=s23*dt, lw=2, ls='--', c='k')
 
     # cosmetics
-    ax1.legend(handles=[line_cp, line_py, line_phi, line_dum1, line_dum2,])
+    ax1.legend(handles=[line_cp, line_py, line_phi, line_dum1, line_dum2, ])
     ax1.set_xlabel('time [s]')
     ax1.set_ylabel('normalized cart_x position')
     ax2.set_ylabel('phi [degrees]')

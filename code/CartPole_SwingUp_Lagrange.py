@@ -1,19 +1,6 @@
 import h5py
 import numpy as np
-import pandas as pd
-from scipy.fftpack import fft
 import matplotlib.pyplot as plt
-
-
-def convert_data():
-    # convert data to hdf5 file format
-    fp_cp_data = "../data/CartPoleData_full.xlsx"
-    cp_data = pd.read_excel(io=fp_cp_data, sheet_name=0, header=0, index_col=0)
-
-    with h5py.File("../data/CartPoleData_full.h5", 'w') as f:
-        f.create_dataset("CartPoleData_full", data=cp_data)
-
-    return
 
 
 if __name__ == "__main__":
@@ -22,7 +9,7 @@ if __name__ == "__main__":
     idx_map = {"cx": 0, "cvx": 1, "px": 2, "py": 3, "pav": 4}
 
     # read data
-    with h5py.File("../data/CartPoleData_full.h5", 'r') as f:
+    with h5py.File("../data/preprocessed/CartPoleData_full.h5", 'r') as f:
         cp_data = f["CartPoleData_full"][...]
 
     N_trial = 252  # number of data points per trial
@@ -43,8 +30,6 @@ if __name__ == "__main__":
         phi_trials[i_trial] = np.arctan2(py_trials[i_trial], px_trials[i_trial]) * 180 / np.pi
 
     for i_trial in range(num_trials):
-        if i_trial < 577:
-            continue
         cx = cx_trials[i_trial]
         px = px_trials[i_trial]
         py = py_trials[i_trial]
@@ -72,5 +57,6 @@ if __name__ == "__main__":
         ax2.set_ylabel('phi [degrees]')
         ax1.set_title('Trial_ID: {0}'.format(i_trial + 1))
 
+        # save and close figure
         plt.savefig("../pics/cp_trial_{0}".format(i_trial))
         plt.close()
