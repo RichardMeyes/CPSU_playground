@@ -11,33 +11,34 @@ if __name__ == "__main__":
     # read data
     with h5py.File("../data/preprocessed/CartPoleData_full.h5", 'r') as f:
         cp_data = f["CartPoleData_full"][...]
+        rewards = f["EpisodeRewards"][...]
 
-    N_trial = 252  # number of data points per trial
+    N_episode = 252  # number of data points per episode
     N_total = len(cp_data)  # number of total data points
 
-    trial_idxs = np.argwhere(cp_data[:, idx_map['cx']] == 0.0)  # indexes for trial starts
-    num_trials = len(trial_idxs) - 1  # cut last trial becasue it was depricated
+    episode_idxs = np.argwhere(cp_data[:, idx_map['cx']] == 0.0)  # indexes for episode starts
+    num_episodes = len(episode_idxs) - 1  # cut last episode becasue it was depricated
 
-    # create data objects that contain the data for each single trial
-    cx_trials = np.zeros((num_trials, N_trial))
-    px_trials = np.zeros((num_trials, N_trial))
-    py_trials = np.zeros((num_trials, N_trial))
-    phi_trials = np.zeros((num_trials, N_trial))
-    for i_trial in range(num_trials):
-        cx_trials[i_trial] = cp_data[trial_idxs[i_trial][0]:trial_idxs[i_trial][0] + N_trial, idx_map['cx']]
-        px_trials[i_trial] = cp_data[trial_idxs[i_trial][0]:trial_idxs[i_trial][0] + N_trial, idx_map['px']]
-        py_trials[i_trial] = cp_data[trial_idxs[i_trial][0]:trial_idxs[i_trial][0] + N_trial, idx_map['py']]
-        phi_trials[i_trial] = np.arctan2(py_trials[i_trial], px_trials[i_trial]) * 180 / np.pi
+    # create data objects that contain the data for each single episode
+    cx_episodes = np.zeros((num_episodes, N_episode))
+    px_episodes = np.zeros((num_episodes, N_episode))
+    py_episodes = np.zeros((num_episodes, N_episode))
+    phi_episodes = np.zeros((num_episodes, N_episode))
+    for i_episode in range(num_episodes):
+        cx_episodes[i_episode] = cp_data[episode_idxs[i_episode][0]:episode_idxs[i_episode][0] + N_episode, idx_map['cx']]
+        px_episodes[i_episode] = cp_data[episode_idxs[i_episode][0]:episode_idxs[i_episode][0] + N_episode, idx_map['px']]
+        py_episodes[i_episode] = cp_data[episode_idxs[i_episode][0]:episode_idxs[i_episode][0] + N_episode, idx_map['py']]
+        phi_episodes[i_episode] = np.arctan2(py_episodes[i_episode], px_episodes[i_episode]) * 180 / np.pi
 
-    for i_trial in range(num_trials):
-        cx = cx_trials[i_trial]
-        px = px_trials[i_trial]
-        py = py_trials[i_trial]
-        phi = phi_trials[i_trial]
+    for i_episode in range(num_episodes):
+        cx = cx_episodes[i_episode]
+        px = px_episodes[i_episode]
+        py = py_episodes[i_episode]
+        phi = phi_episodes[i_episode]
 
         T = 16.65
-        dt = T / N_trial
-        t = np.linspace(0, T, N_trial)
+        dt = T / N_episode
+        t = np.linspace(0, T, N_episode)
 
         # create figure
         fig = plt.figure(figsize=(8, 6))
@@ -55,8 +56,8 @@ if __name__ == "__main__":
         ax1.set_xlabel('time [s]')
         ax1.set_ylabel('normalized cart_x position')
         ax2.set_ylabel('phi [degrees]')
-        ax1.set_title('Trial_ID: {0}'.format(i_trial + 1))
+        ax1.set_title('episode_ID: {0}, maximum reward: {1}'.format(i_episode + 1, rewards[i_episode]))
 
         # save and close figure
-        plt.savefig("../pics/cp_trial_{0}".format(i_trial))
+        plt.savefig("../pics/cp_episode_{0}".format(i_episode))
         plt.close()
