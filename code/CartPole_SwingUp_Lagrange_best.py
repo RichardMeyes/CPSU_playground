@@ -71,6 +71,7 @@ if __name__ == "__main__":
     # plot segments
     ax1.axvspan(xmin=s12_start*dt, xmax=s12_end*dt, lw=2, ls='--', color='k', alpha=0.2)
     ax1.axvline(x=s23*dt, lw=2, ls='--', c='k')
+    ax2.axhspan(ymin=85, ymax=95, lw=2, ls='--', color='g', alpha=0.3)
 
     # cosmetics
     ax1.legend(handles=[line_cp, line_py, line_phi, line_dum1, line_dum2, ])

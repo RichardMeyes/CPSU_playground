@@ -39,6 +39,9 @@ if __name__ == "__main__":
         py = py_episodes[i_episode]
         phi = phi_episodes[i_episode]
 
+        # determine segement border
+        s12_end = np.argwhere(py > 0.9999)[0][0]
+
         T = 16.65
         dt = T / N_episode
         t = np.linspace(0, T, N_episode)
@@ -54,12 +57,20 @@ if __name__ == "__main__":
         line_py, = ax1.plot(t, py, lw=2, label='pendulum_y')
         line_phi, = ax2.plot(t, phi, lw=2, label='angle', color='g')
 
+        # plot segments
+        ax2.axhspan(ymin=85, ymax=95, lw=2, ls='--', color='g', alpha=0.3)
+        ax1.axvline(x=s12_end * dt, lw=2, ls='--', c='k')
+
         # cosmetics
         ax1.legend(handles=[line_cp, line_py, line_phi])
         ax1.set_xlabel('time [s]')
         ax1.set_ylabel('normalized cart_x position')
         ax2.set_ylabel('phi [degrees]')
         ax1.set_title('episode_ID: {0}, maximum reward: {1}'.format(i_episode + 1, rewards[i_episode]))
+        ax2.set_ylim(-180, 180)
+        ax2.set_yticks(np.arange(-180, 181, 45))
+        ax1.set_xticks(np.arange(0, 17.6, 2.5))
+        ax1.set_yticks(np.arange(-1.0, 1.1, 0.25))
 
         # save and close figure
         plt.show()
