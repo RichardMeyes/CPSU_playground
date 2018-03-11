@@ -13,7 +13,7 @@ def convert_data():
 
 
 def add_rewards():
-    # get rewards
+    # get rewards and add them to the h5 file
     fp_cp_data = "../data/raw/CartPoleData_full_2.csv"
     cp_data = pd.read_csv(fp_cp_data, delimiter=';', header=0, index_col=0)
     rewards = cp_data['reward'][~np.isnan(cp_data['reward'])]

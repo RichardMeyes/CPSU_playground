@@ -17,7 +17,7 @@ if __name__ == "__main__":
     N_total = len(cp_data)  # number of total data points
 
     episode_idxs = np.argwhere(cp_data[:, idx_map['cx']] == 0.0)  # indexes for episode starts
-    num_episodes = len(episode_idxs) - 1  # cut last episode becasue it was depricated
+    num_episodes = len(episode_idxs) - 1  # cut last episode because it was deprecated
 
     # create data objects that contain the data for each single episode
     cx_episodes = np.zeros((num_episodes, N_episode))
@@ -30,7 +30,10 @@ if __name__ == "__main__":
         py_episodes[i_episode] = cp_data[episode_idxs[i_episode][0]:episode_idxs[i_episode][0] + N_episode, idx_map['py']]
         phi_episodes[i_episode] = np.arctan2(py_episodes[i_episode], px_episodes[i_episode]) * 180 / np.pi
 
-    for i_episode in range(num_episodes):
+    # get order of episodes in descending order of maximum reward
+    episode_order = np.argsort(rewards)[::-1]
+
+    for i_episode in episode_order:
         cx = cx_episodes[i_episode]
         px = px_episodes[i_episode]
         py = py_episodes[i_episode]
@@ -59,5 +62,9 @@ if __name__ == "__main__":
         ax1.set_title('episode_ID: {0}, maximum reward: {1}'.format(i_episode + 1, rewards[i_episode]))
 
         # save and close figure
-        plt.savefig("../pics/cp_episode_{0}".format(i_episode))
+        plt.show()
+        # plt.savefig("../pics/cp_episode_{0}".format(i_episode))
         plt.close()
+
+        # ToDo: FFT after initial swing up, plot development of amp and freq depending on episode and on reward.
+        # ToDo: Show that Agent learns to find the correct mps and freqs as learning progresses
