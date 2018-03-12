@@ -5,15 +5,15 @@ import matplotlib.pyplot as plt
 
 
 def find_segment_border(py, threshold, i_iter=0):
-    # determine segement border with sliding time window analysis from the end of the signal towards the beginning
+    # determine segement border with sliding time window analysis
     seg_idx = 0
     windowsize = int(0.1 * N_episode)  # fixed window size
     for idx in range(N_episode - windowsize):
-        py_mean = np.mean(py[::-1][idx:idx + windowsize])
-        if py_mean < threshold:
-            seg_idx = N_episode - idx
+        py_mean = np.mean(py[idx:idx + windowsize])
+        if py_mean > threshold:
+            seg_idx = idx
             break
-    if seg_idx == N_episode:
+    if seg_idx == 0:
         if i_iter >= 2:
             print("No segmentation border can be found within the depth of 2 iterations! Taking whole signal.")
             seg_idx = 0
@@ -23,7 +23,6 @@ def find_segment_border(py, threshold, i_iter=0):
             for i in range(i_iter+1):
                 new_threshold[-i-1] = '0'
             new_threshold = float("".join(new_threshold))
-            print(new_threshold)
             print("No segmentation border found! Threshold too high. Recalculating with lowered threshold {0}".format(new_threshold))
             seg_idx = find_segment_border(py, threshold=new_threshold, i_iter=i_iter+1)
 
