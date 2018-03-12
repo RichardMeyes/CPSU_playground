@@ -1,6 +1,33 @@
 import h5py
 import numpy as np
+from scipy.fftpack import fft
 import matplotlib.pyplot as plt
+
+
+def find_segment_border(py, threshold, i_iter=0):
+    # determine segement border with sliding time window analysis from the end of the signal towards the beginning
+    seg_idx = 0
+    windowsize = int(0.1 * N_episode)  # fixed window size
+    for idx in range(N_episode - windowsize):
+        py_mean = np.mean(py[::-1][idx:idx + windowsize])
+        if py_mean < threshold:
+            seg_idx = N_episode - idx
+            break
+    if seg_idx == N_episode:
+        if i_iter >= 2:
+            print("No segmentation border can be found within the depth of 2 iterations! Taking whole signal.")
+            seg_idx = 0
+            return seg_idx
+        else:
+            new_threshold = list(str(threshold))
+            for i in range(i_iter+1):
+                new_threshold[-i-1] = '0'
+            new_threshold = float("".join(new_threshold))
+            print(new_threshold)
+            print("No segmentation border found! Threshold too high. Recalculating with lowered threshold {0}".format(new_threshold))
+            seg_idx = find_segment_border(py, threshold=new_threshold, i_iter=i_iter+1)
+
+    return seg_idx
 
 
 if __name__ == "__main__":
@@ -39,18 +66,23 @@ if __name__ == "__main__":
         py = py_episodes[i_episode]
         phi = phi_episodes[i_episode]
 
-        # determine segement border
-        s12_end = np.argwhere(py > 0.9999)[0][0]
+        s23 = find_segment_border(py, threshold=0.9999)
 
         T = 16.65
         dt = T / N_episode
         t = np.linspace(0, T, N_episode)
 
+        # perform FFT on cart pole movement
+        cx_fft = fft(cx[s23:])
+        N_fft = len(cx[s23:])
+        x_cx_fft = np.linspace(0, 1 / (2 * dt), N_fft // 2)
+
         # create figure
-        fig = plt.figure(figsize=(8, 6))
-        fig.subplots_adjust(top=0.95, bottom=0.1, left=0.12, right=0.90, wspace=0.6)
-        ax1 = fig.add_subplot(111)
+        fig = plt.figure(figsize=(12, 6))
+        fig.subplots_adjust(top=0.95, bottom=0.1, left=0.12, right=0.95, wspace=0.6)
+        ax1 = plt.subplot2grid((1, 2), (0, 0))
         ax2 = plt.twinx(ax1)
+        ax3 = plt.subplot2grid((1, 2), (0, 1))
 
         # plot data
         line_cp, = ax1.plot(t, cx, lw=2, label='cartpole_x')
@@ -59,7 +91,10 @@ if __name__ == "__main__":
 
         # plot segments
         ax2.axhspan(ymin=85, ymax=95, lw=2, ls='--', color='g', alpha=0.3)
-        ax1.axvline(x=s12_end * dt, lw=2, ls='--', c='k')
+        ax1.axvline(x=s23 * dt, lw=2, ls='--', c='k')
+
+        # plot FFT
+        ax3.plot(x_cx_fft[1:], 2 / N_fft * np.abs(cx_fft[1:N_fft // 2]), lw=2, label='FFT of cartpole_x')
 
         # cosmetics
         ax1.legend(handles=[line_cp, line_py, line_phi])
@@ -71,6 +106,10 @@ if __name__ == "__main__":
         ax2.set_yticks(np.arange(-180, 181, 45))
         ax1.set_xticks(np.arange(0, 17.6, 2.5))
         ax1.set_yticks(np.arange(-1.0, 1.1, 0.25))
+
+        ax3.legend()
+        ax3.set_xlabel('frequency [Hz]')
+        ax3.set_ylabel('Amplitude')
 
         # save and close figure
         plt.show()
