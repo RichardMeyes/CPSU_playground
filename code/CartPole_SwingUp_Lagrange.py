@@ -65,15 +65,15 @@ if __name__ == "__main__":
         py = py_episodes[i_episode]
         phi = phi_episodes[i_episode]
 
-        s23 = find_segment_border(py, threshold=0.9999)
-
         T = 16.65
         dt = T / N_episode
         t = np.linspace(0, T, N_episode)
 
+        s12 = int(N_episode*3.0/T)  # seconds
+
         # perform FFT on cart pole movement
-        cx_fft = fft(cx[s23:])
-        N_fft = len(cx[s23:])
+        cx_fft = fft(cx[s12:])
+        N_fft = len(cx[s12:])
         x_cx_fft = np.linspace(0, 1 / (2 * dt), N_fft // 2)
 
         # create figure
@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
         # plot segments
         ax2.axhspan(ymin=85, ymax=95, lw=2, ls='--', color='g', alpha=0.3)
-        ax1.axvline(x=s23 * dt, lw=2, ls='--', c='k')
+        ax1.axvline(x=s12 * dt, lw=2, ls='--', c='k')
 
         # plot FFT
         ax3.plot(x_cx_fft[1:], 2 / N_fft * np.abs(cx_fft[1:N_fft // 2]), lw=2, label='FFT of cartpole_x')
