@@ -57,7 +57,7 @@ if __name__ == "__main__":
     N_episode = 252  # number of data points per episode
     N_total = len(cp_data)  # number of total data points
 
-    episode_idxs = np.argwhere(cp_data[:, idx_map['cx']] == 0.0)  # indexes for episode starts
+    episode_idxs = np.squeeze(np.argwhere(cp_data[:, idx_map['cx']] == 0.0))  # indexes for episode starts
     num_episodes = len(episode_idxs) - 1  # cut last episode because it was deprecated
 
     # create data objects that contain the data for each single episode
@@ -66,9 +66,9 @@ if __name__ == "__main__":
     py_episodes = np.zeros((num_episodes, N_episode))
     phi_episodes = np.zeros((num_episodes, N_episode))
     for i_episode in range(num_episodes):
-        cx_episodes[i_episode] = cp_data[episode_idxs[i_episode][0]:episode_idxs[i_episode][0] + N_episode, idx_map['cx']]
-        px_episodes[i_episode] = cp_data[episode_idxs[i_episode][0]:episode_idxs[i_episode][0] + N_episode, idx_map['px']]
-        py_episodes[i_episode] = cp_data[episode_idxs[i_episode][0]:episode_idxs[i_episode][0] + N_episode, idx_map['py']]
+        cx_episodes[i_episode] = cp_data[episode_idxs[i_episode]:episode_idxs[i_episode] + N_episode, idx_map['cx']]
+        px_episodes[i_episode] = cp_data[episode_idxs[i_episode]:episode_idxs[i_episode] + N_episode, idx_map['px']]
+        py_episodes[i_episode] = cp_data[episode_idxs[i_episode]:episode_idxs[i_episode] + N_episode, idx_map['py']]
         phi_episodes[i_episode] = np.arctan2(py_episodes[i_episode], px_episodes[i_episode]) * 180 / np.pi
 
     # get order of episodes in descending order of maximum reward
