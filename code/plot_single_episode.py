@@ -5,6 +5,20 @@ import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt
 
 
+def butter_bandpass(lowcut, highcut, fs, order=5):
+    nyq = 0.5 * fs
+    low = lowcut / nyq
+    high = highcut / nyq
+    b, a = butter(order, [low, high], btype='band')
+    return b, a
+
+
+def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
+    b, a = butter_bandpass(lowcut, highcut, fs, order=order)
+    y = filtfilt(b, a, data)
+    return y
+
+
 def find_segment_border(py, threshold, i_iter=0):
     # determine segement border with sliding time window analysis
     seg_idx = 0
@@ -68,6 +82,7 @@ if __name__ == "__main__":
 
         T = 16.65
         dt = T / N_episode
+        fs = 1/dt
         t = np.linspace(0, T, N_episode)
 
         seg = 3.0
@@ -77,6 +92,10 @@ if __name__ == "__main__":
         cx_fft = fft(cx[s12:])
         N_fft = len(cx[s12:])
         x_cx_fft = np.linspace(0, 1 / (2 * dt), N_fft // 2)
+
+        # perform FFT on filtered movement data to detect high frequency component
+        cx_filt = butter_bandpass_filter(cx, lowcut=2.0, highcut=5.0, fs=fs, order=5)
+        cx_filt_fft = fft(cx_filt[s12:])
 
         # create figure
         fig = plt.figure(figsize=(12, 6))
@@ -89,6 +108,7 @@ if __name__ == "__main__":
         line_cp, = ax1.plot(t, cx, lw=2, label='cartpole_x')
         line_py, = ax1.plot(t, py, lw=2, label='pendulum_y')
         line_phi, = ax2.plot(t, phi, lw=2, label='angle', color='g')
+        line_cp_filt, = ax1.plot(t, cx_filt, lw=2, c='k', label='cartpole_x')
 
         # plot segments
         ax2.axhspan(ymin=85, ymax=95, lw=2, ls='--', color='g', alpha=0.3)
@@ -96,6 +116,7 @@ if __name__ == "__main__":
 
         # plot FFT
         ax3.plot(x_cx_fft[1:], 2 / N_fft * np.abs(cx_fft[1:N_fft // 2]), lw=2, label='FFT of cartpole_x')
+        ax3.plot(x_cx_fft[1:], 2 / N_fft * np.abs(cx_filt_fft[1:N_fft // 2]), lw=2, c='k', label='FFT of cartpole_x')
 
         # cosmetics
         ax1.legend(handles=[line_cp, line_py, line_phi])
@@ -116,5 +137,3 @@ if __name__ == "__main__":
         plt.show()
         # plt.savefig("../pics/cp_episode_{0}".format(i_episode))
         plt.close()
-
-        # ToDo: plot FFT on filtered c_x data. Butterworthfilter for low frequencies, as only the higher frequencies in the later stages are relevant
