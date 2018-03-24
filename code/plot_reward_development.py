@@ -16,10 +16,9 @@ if __name__ == "__main__":
     N_episode = 252  # number of data points per episode
     N_total = len(cp_data)  # number of total data points
     episode_idxs = np.squeeze(np.argwhere(cp_data[:, idx_map['cx']] == 0.0)) # indexes for episode starts
-    num_episodes = len(episode_idxs)
-
     # cut the last and the first 8 episodes so that 1900 episodes remain
     episode_idxs = episode_idxs[8:-1]
+    num_episodes = len(episode_idxs)
     rewards = rewards[8:]
 
     # order episodes according to max reward
