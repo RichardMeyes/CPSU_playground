@@ -29,16 +29,20 @@ if __name__ == "__main__":
     num_boxes = 19
     num_episodes_per_box = int(num_episodes/num_boxes)
 
-    rewards_box = np.zeros([num_episodes_per_box, num_boxes])
+    rewards_box_ord = np.zeros([num_episodes_per_box, num_boxes])
+    rewards_box_chron = np.zeros([num_episodes_per_box, num_boxes])
     for i_episode, reward in enumerate(rewards):
         row = int(i_episode%num_episodes_per_box)
         col = int(i_episode//num_episodes_per_box)
-        rewards_box[row, col] = rewards[episode_order][i_episode]
+        rewards_box_chron[row, col] = rewards[i_episode]
+        rewards_box_ord[row, col] = rewards[episode_order][i_episode]
 
     # create figure
-    fig = plt.figure(figsize=(8, 6))
+    fig = plt.figure(figsize=(14, 8))
     fig.subplots_adjust(top=0.95, bottom=0.1, left=0.12, right=0.95, wspace=0.6)
-    ax = fig.add_subplot(111)
+    ax1 = fig.add_subplot(121)
+    ax2 = fig.add_subplot(122)
 
-    ax.boxplot(rewards_box)
+    ax1.boxplot(rewards_box_chron)
+    ax2.boxplot(rewards_box_ord)
     plt.show()
