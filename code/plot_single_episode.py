@@ -2,6 +2,7 @@ import h5py
 import numpy as np
 from scipy.fftpack import fft
 import matplotlib.pyplot as plt
+from scipy.signal import butter, filtfilt
 
 
 def find_segment_border(py, threshold, i_iter=0):
@@ -116,6 +117,4 @@ if __name__ == "__main__":
         # plt.savefig("../pics/cp_episode_{0}".format(i_episode))
         plt.close()
 
-        # ToDo: high-pass, so that low frequs are cut - then boxplot, 1900 episodes, 19 boxplots, 100 episodes per box
-        # ToDo: FFT after initial swing up, plot development of amp and freq depending on episode and on reward.
-        # ToDo: Show that Agent learns to find the correct mps and freqs as learning progresses
+        # ToDo: plot FFT on filtered c_x data. Butterworthfilter for low frequencies, as only the higher frequencies in the later stages are relevant
