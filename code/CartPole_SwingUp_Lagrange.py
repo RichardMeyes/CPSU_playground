@@ -69,7 +69,8 @@ if __name__ == "__main__":
         dt = T / N_episode
         t = np.linspace(0, T, N_episode)
 
-        s12 = int(N_episode*3.0/T)  # seconds
+        seg = 3.0
+        s12 = int(N_episode*seg/T)  # seconds
 
         # perform FFT on cart pole movement
         cx_fft = fft(cx[s12:])
@@ -115,5 +116,6 @@ if __name__ == "__main__":
         # plt.savefig("../pics/cp_episode_{0}".format(i_episode))
         plt.close()
 
+        # ToDo: high-pass, so that low frequs are cut - then boxplot, 1900 episodes, 19 boxplots, 100 episodes per box
         # ToDo: FFT after initial swing up, plot development of amp and freq depending on episode and on reward.
         # ToDo: Show that Agent learns to find the correct mps and freqs as learning progresses

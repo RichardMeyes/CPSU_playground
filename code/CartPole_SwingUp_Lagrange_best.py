@@ -22,7 +22,6 @@ if __name__ == "__main__":
     # find segments
     s12_start = np.argwhere(py > 0.99)[0][0]
     s12_end = np.argwhere(py > 0.9999)[0][0]
-    # ToDo: find start of the third segment with sliding time window and variance analysis in this time window
     s23 = 186  # hard coded for now, found by visual inspection
 
     # calculate some parameters
