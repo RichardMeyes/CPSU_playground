@@ -1,0 +1,61 @@
+import numpy as np
+from scipy.integrate import odeint
+import matplotlib.pyplot as plt
+
+
+def model(z, t):
+    """
+    consider the following exemplary inhomogeneous differential equation:
+    x''(t) = -g/l * x(t) + Aw^2/l*sin(w*t)
+
+    for odeint to work, rewrite the differential equation as a system of first-order ODEs
+
+    define: z = [x', x] and z' = [x'', x']
+
+    so that
+    z[0]' = -(g/l)*z[1] + (Aw^2/l)*sin(wt)
+    z[1]' = z[0]
+    """
+
+    # transfer to:
+    # theta''(t) = {g*sin(theta(t)) + cos(thetha(t))*[-F_c(t) - 1/2*m_p*l*theta'(t) + mu_c*sgn*(x_c'(t))] - mu_p*thetha'(t)/m*l} / l*[4/3 - m_p*cos^2(theta(t))/m_c+m_p]
+
+    g = 9.81  # acceleration of gravity
+    l = 0.5  # half length of the pole
+    m_c = 1.0  # mass of the cart
+    m_p = 0.1  # mass of the pole
+    mu_c = 0.0005  #  friction between cart and track
+    mu_p = 0.00002  # friction between pole and cart
+
+    """
+    x_c(t) = A*sin(wt)
+    with F_c(t) = m_c * x_c''(t):
+    F_c(t) = -A*m_c*w^2*sin(wt)
+    """
+
+    A = 0.1
+    w = 3.4*np.pi  # Hz
+    x_c = A*np.sin(w*t)
+    x_c_dot = A*w*np.cos(w*t)
+    F_c = A*m_c*w**2*np.sin(w*t)
+
+    theta__ = (g*np.sin(z[1]) - np.cos(z[1])*(-F_c - m_p*l*z[0]**2*np.sin(z[1]) + mu_c*np.sign(x_c_dot)) - mu_p*z[0]/m_p/l) / (l*(4/3 - m_p*np.cos(z[1])**2/(m_p+m_c)))
+
+    return np.array([theta__, z[0]])
+
+
+if __name__ == "__main__":
+
+    # define initial conditions
+    # first entry is the initial angle between the pendulum and the y-axis.
+    #  A value of 0 means, that the pendulum is in upright position
+    x0 = [0.1, 0]
+    t = np.linspace(0, 16.65, 252, endpoint=True)
+
+    sol = odeint(model, x0, t)
+
+    plt.plot(t, sol[:, 0], 'b', label='theta(t)')
+    # plt.plot(t, sol[:, 1], 'g', label="thetha'(t)/dt")
+    plt.legend(loc=1)
+    plt.grid()
+    plt.show()
