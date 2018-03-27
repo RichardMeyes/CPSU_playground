@@ -126,4 +126,11 @@ if __name__ == "__main__":
         ax.axvline(x=3.4, c='k', ls='--')
     plt.show()
 
-    # Interpretation and Story
+    # Interpretation and Story:
+    # agents learns to develop 3.4 Hz peak with increasing reward!
+    # ToDo: show correlation of peak with increasing reward!
+    # retrain agent with new reward function not solely based on pendulum y pos but with dependence on frequency of the movement.
+    # check whether refined reward function accelerates learning
+    # suggest that agent can learn to develop his own reward
+    # questionable is its ability to recognize the 3.4 Hz peak as a feature to be incorporated into his own reward
+
