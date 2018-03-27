@@ -76,6 +76,7 @@ if __name__ == "__main__":
         py_episodes[i_episode] = cp_data[episode_idxs[i_episode]:episode_idxs[i_episode] + N_episode, idx_map['py']]
         phi_episodes[i_episode] = np.arctan2(py_episodes[i_episode], px_episodes[i_episode]) * 180 / np.pi
 
+    # create data object for FFT data
     T = 16.65
     dt = T / N_episode
     fs = 1 / dt
@@ -87,8 +88,42 @@ if __name__ == "__main__":
     N_fft = len(cx_episodes[0][s12:])
     x_cx_fft = np.linspace(0, 1 / (2 * dt), N_fft // 2)
 
-    cx_fft_episodes = np.zeros((num_episodes, N_fft))
+    cx_fft_episodes = np.zeros((num_episodes, N_fft // 2 - 1))
     for i_episode in range(num_episodes):
-        cx_fft_episodes[i_episode] = fft(cx_episodes[i_episode][s12:])
+        # perform FFT on filtered movement data to detect high frequency component
+        cx_filt = butter_bandpass_filter(cx_episodes[i_episode], lowcut=2.0, highcut=5.0, fs=fs, order=5)
+        cx_filt_fft = fft(cx_filt[s12:])
+        cx_fft_episodes[i_episode] = 2 / N_fft * np.abs(cx_filt_fft[1:N_fft // 2])
 
-    # ToDo: plot average FFT with mean and std! Check development of peaks over time!
+    # for i_episode in episode_order[::-1]:
+    #     fig = plt.figure(figsize=(12, 6))
+    #     fig.subplots_adjust(top=0.95, bottom=0.1, left=0.12, right=0.95, wspace=0.6)
+    #     ax = fig.add_subplot(111)
+    #     ax.plot(x_cx_fft[1:], cx_fft_episodes[i_episode], lw=2, c='k')
+    #     ax.set_title('episode_ID: {0}, maximum reward: {1}'.format(i_episode + 1, rewards[i_episode]))
+    #     plt.show()
+
+    # reorder
+    cx_fft_episodes = cx_fft_episodes[episode_order]
+
+    fig = plt.figure(figsize=(18, 12))
+    fig.subplots_adjust(top=0.95, bottom=0.1, left=0.12, right=0.95, wspace=0.6)
+    for i in range(19):
+        avr_fft = np.mean(cx_fft_episodes[i*100:(i+1)*100], axis=0)
+        ax = fig.add_subplot(4,5,i+1)
+        ax.plot(x_cx_fft[1:], avr_fft, lw=2, c='k')
+        ax.set_title('eIDs: {0}-{1}, av_rev {2:.2f}'.format(i*100, (i+1)*100, np.mean(rewards[episode_order][i*100:(i+1)*100])))
+        ax.axvline(x=3.4, c='k', ls='--')
+    plt.show()
+
+    fig = plt.figure(figsize=(18, 12))
+    fig.subplots_adjust(top=0.95, bottom=0.1, left=0.12, right=0.95, wspace=0.6)
+    for i in range(20):
+        avr_fft = np.mean(cx_fft_episodes[-400:][i*20:(i+1)*20], axis=0)
+        ax = fig.add_subplot(4,5,i+1)
+        ax.plot(x_cx_fft[1:], avr_fft, lw=2, c='k')
+        ax.set_title('eIDs: {0}-{1}, av_rev {2:.2f}'.format(1500+i*20, 1500+(i+1)*20, np.mean(rewards[episode_order][-400:][i*20:(i+1)*20])))
+        ax.axvline(x=3.4, c='k', ls='--')
+    plt.show()
+
+    # Interpretation and Story
