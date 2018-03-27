@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 
@@ -33,8 +34,10 @@ def model(z, t):
     """
 
     A = 0.007
-    w = 3.4  # Hz
-    F_c = A*m_c*w**2*np.sin(np.pi/180*w*t)
+    w1 = 3.4  # Hz
+    B = 0.005
+    w2 = 3.0  # Hz
+    F_c = A*m_c*w1**2*np.sin(np.pi/180*w1*t) + B*m_c*w2**2*np.sin(np.pi/180*w2*t)
 
     theta__ = (g*np.sin(np.pi/180*z[1]) - np.cos(np.pi/180*z[1])*(-F_c - m_p*l*z[0]**2*np.sin(np.pi/180*z[1])) - mu_p*z[0]/m_p/l) / (l*(4/3 - m_p*np.cos(np.pi/180*z[1])**2/(m_p+m_c)))
 
@@ -46,7 +49,15 @@ if __name__ == "__main__":
     # define initial conditions
     # first entry is the initial angle between the pendulum and the y-axis.
     #  A value of 0 means, that the pendulum is in upright position
-    x0 = [0, 0.0]
+
+    # read initial conditions from data
+    fp_cp_data = "../data/preprocessed/CartPoleData.xlsx"
+    cp_data = pd.read_excel(io=fp_cp_data, sheet_name=0, header=0, index_col=0)
+    theta_dot_0 = cp_data['pav'].data[220]
+    theta_0 = np.arctan2(cp_data['px'], cp_data['py']).data[220]
+
+    x0 = [theta_0, theta_dot_0]
+    x0 = [0, 0]
     t = np.linspace(0, 16.65, 252, endpoint=True)
 
     sol = odeint(model, x0, t)
