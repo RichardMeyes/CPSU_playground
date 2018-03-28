@@ -104,10 +104,6 @@ if __name__ == "__main__":
     #     ax.set_title('episode_ID: {0}, maximum reward: {1}'.format(i_episode + 1, rewards[i_episode]))
     #     plt.show()
 
-    # ToDo: plot Amplitude development!
-    # ToDo: check develpment of fraction of the 3.4 Hz in the power spectral density. (integral around 3.4Hz, compare to integral across all frequencies)
-    # ToDo: plot development of average y-pos
-
     # calculate indexes for frequency band around 3.4 Hz
     freq1 = 3.4  # Hz
     margin = 0.1  # Hz
@@ -154,17 +150,21 @@ if __name__ == "__main__":
     def func_lin(x, a, b):
         return a*x + b
     popt1, pcov1 = curve_fit(func_lin, np.arange(len(amps_high))[3:], amps_high[3:])
-    popt2, pcov2 = curve_fit(func_lin, np.arange(len(amps_low))[3:], amps_low[3:])
+    popt2, pcov2 = curve_fit(func_lin, np.arange(len(amps_low))[3:-4], amps_low[3:-4])
+    popt3, pcov3 = curve_fit(func_lin, np.arange(len(amps_low))[-6:], amps_low[-6:])
 
     fig = plt.figure(figsize=(6, 6))
     fig.subplots_adjust(top=0.95, bottom=0.1, left=0.14, right=0.95, wspace=0.6)
     ax = fig.add_subplot(111)
-    ax.plot(amps_high, c='b', marker='o', lw=2)
+    ax.plot(amps_high, c='b', marker='o', lw=2, alpha=0.5)
     ax.plot(np.arange(len(amps_high))[3:], func_lin(np.arange(len(amps_high))[3:], *popt1), lw=2, ls='--', c='b')
-    ax.plot(amps_low, c='orange', marker='o', lw=2)
-    ax.plot(np.arange(len(amps_low))[3:], func_lin(np.arange(len(amps_low))[3:], *popt2), lw=2, ls='--', c='orange')
+    ax.plot(amps_low, c='orange', marker='o', lw=2, alpha=0.5)
+    ax.plot(np.arange(len(amps_low))[3:-4], func_lin(np.arange(len(amps_low))[3:-4], *popt2), lw=2, ls='--', c='orange')
+    ax.plot(np.arange(len(amps_low))[-6:], func_lin(np.arange(len(amps_low))[-6:], *popt3), lw=2, ls='--', c='orange')
     ax.set_xlabel("episode window")
     ax.set_ylabel("amplitude")
+    ax.set_xticks(np.arange(19))
+    ax.set_xticklabels(np.arange(1, 20))
     plt.show()
 
     fig = plt.figure(figsize=(18, 12))
@@ -189,3 +189,5 @@ if __name__ == "__main__":
     # suggest that agent can learn to develop his own reward
     # questionable is its ability to recognize the 3.4 Hz peak as a feature to be incorporated into his own reward+
 
+    # ToDo: check develpment of fraction of the 3.4 Hz in the power spectral density. (integral around 3.4Hz, compare to integral across all frequencies)
+    # ToDo: plot development of average y-pos
