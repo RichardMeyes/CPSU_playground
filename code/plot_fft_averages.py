@@ -168,27 +168,59 @@ if __name__ == "__main__":
     ax.set_xticklabels(np.arange(1, 20))
     plt.show()
 
+    # episode zoom in
+    # ToDo: CLEAN THIS COPY PASTE MESS UP!
+
+    # store avr_fft amps for 3.4 Hz peak
+    amps_high = []
+    amps_low = []
+
     fig = plt.figure(figsize=(18, 12))
     fig.subplots_adjust(top=0.95, bottom=0.1, left=0.12, right=0.95, wspace=0.6)
-    for i in range(20):
+    for i in range(19):
         avr_fft = np.mean(cx_fft_episodes[-400:][i*20:(i+1)*20], axis=0)
-        avr_fft_std = np.std(cx_fft_episodes[-400:][i * 20:(i + 1) * 20], axis=0)
+        avr_fft_std = np.std(cx_fft_episodes[-400:][+ i * 20:(i + 1) * 20], axis=0)
         ax = fig.add_subplot(4,5,i+1)
         ax.plot(x_cx_fft[1:], avr_fft, lw=2, c='k')
         ax.fill_between(x_cx_fft[1:], avr_fft - avr_fft_std, avr_fft + avr_fft_std, color='k', alpha=0.3)
-        ax.set_title('eIDs: {0}-{1}, av_rev {2:.2f}'.format(1500+i*20, 1500+(i+1)*20, np.mean(rewards[episode_order][-400:][i*20:(i+1)*20])))
-        ax.axvline(x=3.4, c='b', ls='--')
-        ax.axhline(y=avr_fft[peak_idx1], xmin=0, xmax=3.4/x_cx_fft[-1], c='r', ls='-')
+        ax.set_title('eIDs: {0}-{1}, av_rev {2:.2f}'.format(1500 + i*20, 1500 + (i+1)*20, np.mean(rewards[episode_order][-400:][i*20:(i+1)*20])))
+        ax.axvline(x=freq1, ymin=0, ymax=avr_fft[peak_idx1]/0.006, c='b', ls='--')
+        ax.axvline(x=freq2, ymin=0, ymax=avr_fft[peak_idx2]/0.006, c='orange', ls='--')
+        ax.axhline(y=avr_fft[peak_idx1], xmin=0, xmax=freq1/x_cx_fft[-1], c='b', ls='--')
+        ax.axhline(y=avr_fft[peak_idx2], xmin=0, xmax=freq2 / x_cx_fft[-1], c='orange', ls='--')
         ax.set_ylim(0, 0.006)
-    # plt.show()
+        amps_high.append(np.mean(avr_fft[idx_low1:idx_high1+1]))
+        amps_low.append(np.mean(avr_fft[idx_low2:idx_high2 + 1]))
+
+    def func_lin(x, a, b):
+        return a*x + b
+    popt1, pcov1 = curve_fit(func_lin, np.arange(len(amps_high))[3:], amps_high[3:])
+    popt2, pcov2 = curve_fit(func_lin, np.arange(len(amps_low))[3:-4], amps_low[3:-4])
+    popt3, pcov3 = curve_fit(func_lin, np.arange(len(amps_low))[-6:], amps_low[-6:])
+
+    # ToDo: chose more windows with same window size but smaller window step size so that after each step 50% of the previous window is kept
+    fig = plt.figure(figsize=(6, 6))
+    fig.subplots_adjust(top=0.95, bottom=0.1, left=0.14, right=0.95, wspace=0.6)
+    ax = fig.add_subplot(111)
+    ax.plot(amps_high, c='b', marker='o', lw=2, alpha=0.5)
+    ax.plot(np.arange(len(amps_high))[3:], func_lin(np.arange(len(amps_high))[3:], *popt1), lw=2, ls='--', c='b')
+    ax.plot(amps_low, c='orange', marker='o', lw=2, alpha=0.5)
+    ax.plot(np.arange(len(amps_low))[3:-4], func_lin(np.arange(len(amps_low))[3:-4], *popt2), lw=2, ls='--', c='orange')
+    ax.plot(np.arange(len(amps_low))[-6:], func_lin(np.arange(len(amps_low))[-6:], *popt3), lw=2, ls='--', c='orange')
+    ax.set_xlabel("episode window")
+    ax.set_ylabel("amplitude")
+    ax.set_xticks(np.arange(19))
+    ax.set_xticklabels(np.arange(1, 20))
+    plt.show()
 
     # Interpretation and Story:
     # agents learns to develop 3.4 Hz peak with increasing reward!
-    # ToDo: show correlation of peak with increasing reward!
+    # ToDo: show correlation of amplitude peak with increasing reward!!!
     # retrain agent with new reward function not solely based on pendulum y pos but with dependence on frequency of the movement.
     # check whether refined reward function accelerates learning
     # suggest that agent can learn to develop his own reward
     # questionable is its ability to recognize the 3.4 Hz peak as a feature to be incorporated into his own reward+
 
+    # ToDo: add ratio plot between low and high freq amplitude, showing the development of the ratio between the frequency compopnents
     # ToDo: check develpment of fraction of the 3.4 Hz in the power spectral density. (integral around 3.4Hz, compare to integral across all frequencies)
     # ToDo: plot development of average y-pos
