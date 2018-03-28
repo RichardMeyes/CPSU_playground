@@ -153,6 +153,7 @@ if __name__ == "__main__":
     popt2, pcov2 = curve_fit(func_lin, np.arange(len(amps_low))[3:-4], amps_low[3:-4])
     popt3, pcov3 = curve_fit(func_lin, np.arange(len(amps_low))[-6:], amps_low[-6:])
 
+    # ToDo: chose more windows with same window size but smaller window step size so that after each step 50% of the previous window is kept
     fig = plt.figure(figsize=(6, 6))
     fig.subplots_adjust(top=0.95, bottom=0.1, left=0.14, right=0.95, wspace=0.6)
     ax = fig.add_subplot(111)
