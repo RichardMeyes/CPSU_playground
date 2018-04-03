@@ -1,0 +1,9 @@
+Interpretation and Story:
+Title: Self-Reflecting DRL agents palying CPSU
+agents learns to develop 3.4 Hz peak with increasing reward!
+correction: learns to balance ratio between different peaks or more general, learns to find the right frequency components
+retrain agent with new reward function not solely based on pendulum y pos but with dependence on frequency of the movement.
+normal reward during episoed, after each episode shape cumulative episodic reward based on freq development!
+check whether refined reward function accelerates learning
+suggest that agent can learn to develop his own reward and/or extract important features from his experience
+questionable is its ability to recognize the 3.4 Hz peak as a feature to be incorporated into his own reward+

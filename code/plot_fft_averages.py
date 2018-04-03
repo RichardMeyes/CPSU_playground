@@ -4,6 +4,7 @@ from scipy.fftpack import fft
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from scipy.signal import butter, filtfilt
+from scipy.stats import pearsonr
 
 
 def butter_bandpass(lowcut, highcut, fs, order=5):
@@ -96,6 +97,7 @@ if __name__ == "__main__":
         cx_filt_fft = fft(cx_filt[s12:])
         cx_fft_episodes[i_episode] = 2 / N_fft * np.abs(cx_filt_fft[1:N_fft // 2])
 
+    # # plot single fft as a test
     # for i_episode in episode_order[::-1]:
     #     fig = plt.figure(figsize=(12, 6))
     #     fig.subplots_adjust(top=0.95, bottom=0.1, left=0.12, right=0.95, wspace=0.6)
@@ -122,105 +124,90 @@ if __name__ == "__main__":
     idx_high2 = int(len(x_cx_fft) * high_freq2 / x_cx_fft[-1]) - 1  # -1, becasue the first data point of x_cx_fft is cut for plotting!
     peak_idx2 = int(len(x_cx_fft) * (low_freq2 + high_freq2) / 2 / x_cx_fft[-1]) - 1
 
-
-    # reorder
+    # reorder data according to cumulative episodic reward
     cx_fft_episodes = cx_fft_episodes[episode_order]
 
-    # store avr_fft amps for 3.4 Hz peak
+    # create data storage for avr_fft amps for 3.4 Hz peak and 2.3 Hz peak
     amps_high = []
     amps_low = []
+    window_rewards = []
 
+    # sliding time window analysis params
+    episode_offset = 0  # exclude episodes before this offset
+    window_size = 100  # episodes
+    window_step = 25  # no overlap
+    num_window_steps = int((num_episodes-episode_offset)/window_step)
+
+    # calculate data
+    avr_ffts = np.zeros((num_window_steps, len(x_cx_fft)-1))
+    avr_fft_stds = np.zeros((num_window_steps, len(x_cx_fft) - 1))
+    for i_step in range(num_window_steps):
+        avr_ffts[i_step] = np.mean(cx_fft_episodes[i_step*window_step+episode_offset:i_step*window_step+window_size+episode_offset], axis=0)
+        avr_fft_stds[i_step] = np.std(cx_fft_episodes[i_step*window_step+episode_offset:i_step*window_step+window_size+episode_offset], axis=0)
+        amps_high.append(np.mean(avr_ffts[i_step][idx_low1:idx_high1+1]))
+        amps_low.append(np.mean(avr_ffts[i_step][idx_low2:idx_high2 + 1]))
+        window_rewards.append(np.mean(rewards[episode_order][i_step*window_step+episode_offset: i_step*window_step+window_size+episode_offset]))
+
+    # plot fft development over time
     fig = plt.figure(figsize=(18, 12))
     fig.subplots_adjust(top=0.95, bottom=0.1, left=0.12, right=0.95, wspace=0.6)
-    for i in range(19):
-        avr_fft = np.mean(cx_fft_episodes[i*100:(i+1)*100], axis=0)
-        avr_fft_std = np.std(cx_fft_episodes[i * 100:(i + 1) * 100], axis=0)
-        ax = fig.add_subplot(4,5,i+1)
-        ax.plot(x_cx_fft[1:], avr_fft, lw=2, c='k')
-        ax.fill_between(x_cx_fft[1:], avr_fft - avr_fft_std, avr_fft + avr_fft_std, color='k', alpha=0.3)
-        ax.set_title('eIDs: {0}-{1}, av_rev {2:.2f}'.format(i*100, (i+1)*100, np.mean(rewards[episode_order][i*100:(i+1)*100])))
-        ax.axvline(x=freq1, ymin=0, ymax=avr_fft[peak_idx1]/0.006, c='b', ls='--')
-        ax.axvline(x=freq2, ymin=0, ymax=avr_fft[peak_idx2]/0.006, c='orange', ls='--')
-        ax.axhline(y=avr_fft[peak_idx1], xmin=0, xmax=freq1/x_cx_fft[-1], c='b', ls='--')
-        ax.axhline(y=avr_fft[peak_idx2], xmin=0, xmax=freq2 / x_cx_fft[-1], c='orange', ls='--')
+    k = int(window_size/window_step)  # plot every k-th window.
+    for i_step in range(19):
+        # plot
+        ax = fig.add_subplot(4, 5, i_step+1)
+        ax.plot(x_cx_fft[1:], avr_ffts[k*i_step], lw=2, c='k')
+        ax.fill_between(x_cx_fft[1:],
+                        avr_ffts[k*i_step] - avr_fft_stds[k*i_step],
+                        avr_ffts[k*i_step] + avr_fft_stds[k*i_step],
+                        color='k', alpha=0.3)
+        ax.set_title('eIDs: {0}-{1}, av_rev {2:.2f}'.format(i_step*window_size+episode_offset,
+                                                            (i_step+1)*window_size+episode_offset,
+                                                            np.mean(rewards[episode_order][i_step*window_size+episode_offset: (i_step+1)*window_size+episode_offset])))
+        ax.axvline(x=freq1, ymin=0, ymax=avr_ffts[k*i_step][peak_idx1]/0.006, c='b', ls='--')
+        ax.axvline(x=freq2, ymin=0, ymax=avr_ffts[k*i_step][peak_idx2]/0.006, c='orange', ls='--')
+        ax.axhline(y=avr_ffts[k*i_step][peak_idx1], xmin=0, xmax=freq1/x_cx_fft[-1], c='b', ls='--')
+        ax.axhline(y=avr_ffts[k*i_step][peak_idx2], xmin=0, xmax=freq2 / x_cx_fft[-1], c='orange', ls='--')
         ax.set_ylim(0, 0.006)
-        amps_high.append(np.mean(avr_fft[idx_low1:idx_high1+1]))
-        amps_low.append(np.mean(avr_fft[idx_low2:idx_high2 + 1]))
+
+    # define fitting borders
+    low_border = 9  # chosen such that episodes with negative reward are cut off
+    med_border = -20
 
     def func_lin(x, a, b):
         return a*x + b
-    popt1, pcov1 = curve_fit(func_lin, np.arange(len(amps_high))[3:], amps_high[3:])
-    popt2, pcov2 = curve_fit(func_lin, np.arange(len(amps_low))[3:-4], amps_low[3:-4])
-    popt3, pcov3 = curve_fit(func_lin, np.arange(len(amps_low))[-6:], amps_low[-6:])
+    popt1, pcov1 = curve_fit(func_lin, np.arange(len(amps_high))[low_border:], amps_high[low_border:])
+    popt2, pcov2 = curve_fit(func_lin, np.arange(len(amps_low))[low_border:med_border], amps_low[low_border:med_border])
+    popt3, pcov3 = curve_fit(func_lin, np.arange(len(amps_low))[med_border-2:], amps_low[med_border-2:])
 
-    # ToDo: chose more windows with same window size but smaller window step size so that after each step 50% of the previous window is kept
-    fig = plt.figure(figsize=(6, 6))
-    fig.subplots_adjust(top=0.95, bottom=0.1, left=0.14, right=0.95, wspace=0.6)
-    ax = fig.add_subplot(111)
-    ax.plot(amps_high, c='b', marker='o', lw=2, alpha=0.5)
-    ax.plot(np.arange(len(amps_high))[3:], func_lin(np.arange(len(amps_high))[3:], *popt1), lw=2, ls='--', c='b')
-    ax.plot(amps_low, c='orange', marker='o', lw=2, alpha=0.5)
-    ax.plot(np.arange(len(amps_low))[3:-4], func_lin(np.arange(len(amps_low))[3:-4], *popt2), lw=2, ls='--', c='orange')
-    ax.plot(np.arange(len(amps_low))[-6:], func_lin(np.arange(len(amps_low))[-6:], *popt3), lw=2, ls='--', c='orange')
+    # amps dev over ordered episode
+    fig = plt.figure(figsize=(10, 5))
+    fig.subplots_adjust(top=0.95, bottom=0.1, left=0.08, right=0.95, wspace=0.2)
+    ax = fig.add_subplot(121)
+    ax2 = fig.add_subplot(122)
+    ax3 = ax2.twinx()
+
+    ax.plot(amps_high, c='dodgerblue', marker='o', lw=2, alpha=0.5)
+    ax.plot(np.arange(len(amps_high))[low_border:], func_lin(np.arange(len(amps_high))[low_border:], *popt1), lw=2, ls='--', c='royalblue')
+    ax.plot(amps_low, c='darkorange', marker='o', lw=2, alpha=0.5)
+    ax.plot(np.arange(len(amps_low))[low_border:med_border], func_lin(np.arange(len(amps_low))[low_border:med_border], *popt2), lw=2, ls='--', c='orangered')
+    ax.plot(np.arange(len(amps_low))[med_border-2:], func_lin(np.arange(len(amps_low))[med_border-2:], *popt3), lw=2, ls='--', c='orangered')
     ax.set_xlabel("episode window")
     ax.set_ylabel("amplitude")
-    ax.set_xticks(np.arange(19))
-    ax.set_xticklabels(np.arange(1, 20))
+    ax.set_ylim(0, 0.006)
+    ax.grid()
+
+    # amps vs rewards corr
+    r_high, p_high = pearsonr(window_rewards[low_border:], amps_high[low_border:])
+    r_low, p_low = pearsonr(window_rewards[low_border:], amps_low[low_border:])
+    r_ratio, p_ratio = pearsonr(window_rewards[low_border:], np.array(amps_high[low_border:])/np.array(amps_low[low_border:]))
+    h1, = ax2.plot(window_rewards[low_border:], amps_high[low_border:], c='dodgerblue', marker='o', lw=2, alpha=0.5, label='R = {0:.2f}, p = {1:.2E}'.format(r_high, p_high))
+    h2, = ax2.plot(window_rewards[low_border:], amps_low[low_border:], c='darkorange', marker='o', lw=2, alpha=0.5, label='R = {0:.2f}, p = {1:.2E}'.format(r_low, p_low))
+    h3, = ax3.plot(window_rewards[low_border:], np.array(amps_high[low_border:])/np.array(amps_low[low_border:]), c='g', marker='o', lw=2, alpha=0.5, label='R = {0:.2f}, p = {1:.2E}'.format(r_ratio, p_ratio))
+    ax2.set_xlabel("average reward within episode window")
+    ax2.set_ylim(0, 0.0065)
+    ax2.set_xlim(xmax=1000)
+    ax2.grid()
+    ax2.legend(loc=2, handles=[h1, h2, h3])
     plt.show()
 
-    # episode zoom in
-    # ToDo: CLEAN THIS COPY PASTE MESS UP!
-
-    # store avr_fft amps for 3.4 Hz peak
-    amps_high = []
-    amps_low = []
-
-    fig = plt.figure(figsize=(18, 12))
-    fig.subplots_adjust(top=0.95, bottom=0.1, left=0.12, right=0.95, wspace=0.6)
-    for i in range(19):
-        avr_fft = np.mean(cx_fft_episodes[-400:][i*20:(i+1)*20], axis=0)
-        avr_fft_std = np.std(cx_fft_episodes[-400:][+ i * 20:(i + 1) * 20], axis=0)
-        ax = fig.add_subplot(4,5,i+1)
-        ax.plot(x_cx_fft[1:], avr_fft, lw=2, c='k')
-        ax.fill_between(x_cx_fft[1:], avr_fft - avr_fft_std, avr_fft + avr_fft_std, color='k', alpha=0.3)
-        ax.set_title('eIDs: {0}-{1}, av_rev {2:.2f}'.format(1500 + i*20, 1500 + (i+1)*20, np.mean(rewards[episode_order][-400:][i*20:(i+1)*20])))
-        ax.axvline(x=freq1, ymin=0, ymax=avr_fft[peak_idx1]/0.006, c='b', ls='--')
-        ax.axvline(x=freq2, ymin=0, ymax=avr_fft[peak_idx2]/0.006, c='orange', ls='--')
-        ax.axhline(y=avr_fft[peak_idx1], xmin=0, xmax=freq1/x_cx_fft[-1], c='b', ls='--')
-        ax.axhline(y=avr_fft[peak_idx2], xmin=0, xmax=freq2 / x_cx_fft[-1], c='orange', ls='--')
-        ax.set_ylim(0, 0.006)
-        amps_high.append(np.mean(avr_fft[idx_low1:idx_high1+1]))
-        amps_low.append(np.mean(avr_fft[idx_low2:idx_high2 + 1]))
-
-    def func_lin(x, a, b):
-        return a*x + b
-    popt1, pcov1 = curve_fit(func_lin, np.arange(len(amps_high))[3:], amps_high[3:])
-    popt2, pcov2 = curve_fit(func_lin, np.arange(len(amps_low))[3:-4], amps_low[3:-4])
-    popt3, pcov3 = curve_fit(func_lin, np.arange(len(amps_low))[-6:], amps_low[-6:])
-
-    # ToDo: chose more windows with same window size but smaller window step size so that after each step 50% of the previous window is kept
-    fig = plt.figure(figsize=(6, 6))
-    fig.subplots_adjust(top=0.95, bottom=0.1, left=0.14, right=0.95, wspace=0.6)
-    ax = fig.add_subplot(111)
-    ax.plot(amps_high, c='b', marker='o', lw=2, alpha=0.5)
-    ax.plot(np.arange(len(amps_high))[3:], func_lin(np.arange(len(amps_high))[3:], *popt1), lw=2, ls='--', c='b')
-    ax.plot(amps_low, c='orange', marker='o', lw=2, alpha=0.5)
-    ax.plot(np.arange(len(amps_low))[3:-4], func_lin(np.arange(len(amps_low))[3:-4], *popt2), lw=2, ls='--', c='orange')
-    ax.plot(np.arange(len(amps_low))[-6:], func_lin(np.arange(len(amps_low))[-6:], *popt3), lw=2, ls='--', c='orange')
-    ax.set_xlabel("episode window")
-    ax.set_ylabel("amplitude")
-    ax.set_xticks(np.arange(19))
-    ax.set_xticklabels(np.arange(1, 20))
-    plt.show()
-
-    # Interpretation and Story:
-    # agents learns to develop 3.4 Hz peak with increasing reward!
-    # ToDo: show correlation of amplitude peak with increasing reward!!!
-    # retrain agent with new reward function not solely based on pendulum y pos but with dependence on frequency of the movement.
-    # check whether refined reward function accelerates learning
-    # suggest that agent can learn to develop his own reward
-    # questionable is its ability to recognize the 3.4 Hz peak as a feature to be incorporated into his own reward+
-
-    # ToDo: add ratio plot between low and high freq amplitude, showing the development of the ratio between the frequency compopnents
     # ToDo: check develpment of fraction of the 3.4 Hz in the power spectral density. (integral around 3.4Hz, compare to integral across all frequencies)
-    # ToDo: plot development of average y-pos
