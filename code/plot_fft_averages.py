@@ -163,7 +163,7 @@ if __name__ == "__main__":
         ax.set_title('eIDs: {0}-{1}, av_rev {2:.2f}'.format(i_step*window_size+episode_offset,
                                                             (i_step+1)*window_size+episode_offset,
                                                             np.mean(rewards[episode_order][i_step*window_size+episode_offset: (i_step+1)*window_size+episode_offset])))
-        ax.axvline(x=freq1, ymin=0, ymax=avr_ffts[k*i_step][peak_idx1]/0.006, c='darkorange', ls='--')
+        ax.axvline(x=freq1, ymin=0, ymax=avr_ffts[k*i_step][peak_idx1]/0.006, c='dodgerblue', ls='--')
         ax.axvline(x=freq2, ymin=0, ymax=avr_ffts[k*i_step][peak_idx2]/0.006, c='darkorange', ls='--')
         ax.axhline(y=avr_ffts[k*i_step][peak_idx1], xmin=0, xmax=freq1/x_cx_fft[-1], c='dodgerblue', ls='--')
         ax.axhline(y=avr_ffts[k*i_step][peak_idx2], xmin=0, xmax=freq2 / x_cx_fft[-1], c='darkorange', ls='--')
