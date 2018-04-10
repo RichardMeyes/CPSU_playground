@@ -137,3 +137,7 @@ if __name__ == "__main__":
         plt.show()
         # plt.savefig("../pics/cp_episode_{0}".format(i_episode))
         plt.close()
+
+        # ToDo: calculate reflection reward depending on amplitude ratio for each episode and plot reward development (should be similar to green curve in plot_fft_averages)
+        # ToDo: add new reward to h5 file for each episode
+        
