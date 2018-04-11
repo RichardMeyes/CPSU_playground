@@ -101,42 +101,18 @@ if __name__ == "__main__":
         # clalculate power spectral density to compare to FFT
         f, Pxx_den = welch(cx_filt[s12:], fs=fs, nperseg=32)
         # clalculate power spectrum to compare to FFT
-        f, Pxx_spec = welch(cx_filt[s12:], fs=fs, window='hanning', nperseg=64, scaling='spectrum')
+        f, Pxx_spec = welch(cx_filt[s12:], fs=fs, window='flattop', nperseg=128, scaling='spectrum')
 
-
-        # calculate amplitude ratio in the FFT spectrum
-        freq1 = 3.4  # Hz
-        margin = 0.1  # Hz
-        low_freq1 = freq1 - margin
-        high_freq1 = freq1 + margin
-        idx_low1 = int(len(x_cx_fft) * low_freq1 / x_cx_fft[
-            -1]) - 1  # -1, because the first data point of x_cx_fft is cut for plotting!
-        idx_high1 = int(len(x_cx_fft) * high_freq1 / x_cx_fft[
-            -1]) - 1  # -1, because the first data point of x_cx_fft is cut for plotting!
-        peak_idx1 = int(len(x_cx_fft) * (low_freq1 + high_freq1) / 2 / x_cx_fft[-1]) - 1
-
-        # calculate indexes for frequency band around 2.3 Hz
-        freq2 = 2.3  # Hz
-        margin = 0.2  # Hz
-        low_freq2 = freq2 - margin
-        high_freq2 = freq2 + margin
-        idx_low2 = int(len(x_cx_fft) * low_freq2 / x_cx_fft[
-            -1]) - 1  # -1, becasue the first data point of x_cx_fft is cut for plotting!
-        idx_high2 = int(len(x_cx_fft) * high_freq2 / x_cx_fft[
-            -1]) - 1  # -1, becasue the first data point of x_cx_fft is cut for plotting!
-        peak_idx2 = int(len(x_cx_fft) * (low_freq2 + high_freq2) / 2 / x_cx_fft[-1]) - 1
-
-        amp_high = np.mean(cx_filt_fft[idx_low1:idx_high1 + 1])
-        amp_low = np.mean(cx_filt_fft[idx_low2:idx_high2 + 1])
-
+        # find peak frequency
+        peak_idx = np.argwhere(Pxx_spec == np.max(Pxx_spec))[0][0]
 
         # create figure
-        fig = plt.figure(figsize=(15, 6))
-        fig.subplots_adjust(top=0.95, bottom=0.1, left=0.12, right=0.95, wspace=0.6)
-        ax1 = plt.subplot2grid((1, 3), (0, 0))
+        fig = plt.figure(figsize=(16, 6))
+        fig.subplots_adjust(top=0.95, bottom=0.1, left=0.05, right=0.98, wspace=0.6)
+        ax1 = plt.subplot2grid((1, 4), (0, 0), colspan=2)
         ax2 = plt.twinx(ax1)
-        ax3 = plt.subplot2grid((1, 3), (0, 1))
-        ax4 = plt.subplot2grid((1, 3), (0, 2))
+        ax3 = plt.subplot2grid((1, 4), (0, 2))
+        ax4 = plt.subplot2grid((1, 4), (0, 3))
 
         # plot data
         line_cp, = ax1.plot(t, cx, lw=2, label='cartpole_x')
@@ -144,20 +120,13 @@ if __name__ == "__main__":
         line_phi, = ax2.plot(t, phi, lw=2, label='angle', color='g')
         line_cp_filt, = ax1.plot(t, cx_filt, lw=2, c='k', label='cartpole_x')
 
-
         # plot segments
         ax2.axhspan(ymin=85, ymax=95, lw=2, ls='--', color='g', alpha=0.3)
         ax1.axvline(x=s12 * dt, lw=2, ls='--', c='k')
 
         # plot FFT
         ax3.plot(x_cx_fft[1:], 2 / N_fft * np.abs(cx_fft[1:N_fft // 2]), lw=2, label='FFT of cartpole_x')
-        ax3.plot(x_cx_fft[1:], cx_filt_fft, lw=2, c='k', label='FFT of cartpole_x')
-
-        ax3.axvline(x=freq1, ymin=0, ymax=cx_filt_fft[peak_idx1] / ax3.get_ylim()[1], c='dodgerblue', ls='--')
-        ax3.axvline(x=freq2, ymin=0, ymax=cx_filt_fft[peak_idx2] / ax3.get_ylim()[1], c='darkorange', ls='--')
-        ax3.axhline(y=cx_filt_fft[peak_idx1], xmin=0, xmax=freq1 / x_cx_fft[-1], c='dodgerblue', ls='--')
-        ax3.axhline(y=cx_filt_fft[peak_idx2], xmin=0, xmax=freq2 / x_cx_fft[-1], c='darkorange', ls='--')
-        ax3.set_ylim(ymin=0)
+        ax3.plot(x_cx_fft[1:], cx_filt_fft, lw=2, c='k', label='FFT of filtered cartpole_x')
 
         # cosmetics
         ax1.legend(handles=[line_cp, line_py, line_phi])
@@ -174,10 +143,12 @@ if __name__ == "__main__":
         ax3.set_xlabel('frequency [Hz]')
         ax3.set_ylabel('Amplitude')
 
-        ax4.semilogy(f[1:], np.sqrt(Pxx_spec[1:]))
+        ax4.semilogy(f, np.sqrt(Pxx_spec), color='k', label='power spectrum of cartpole_x')
+        ax4.axvline(x=f[peak_idx], lw=2, ls='--', color='red', label='peak frequency: {0:.2f} Hz'.format(f[peak_idx]))
         ax4.set_xlabel('frequency [Hz]')
         ax4.set_ylabel('PSD [V**2/Hz]')
         ax4.set_ylabel('Linear spectrum [V RMS]')
+        ax4.legend()
 
         # save and close figure
         plt.show()
@@ -185,5 +156,6 @@ if __name__ == "__main__":
         plt.close()
 
         # ToDo: calculate reflection reward depending on amplitude ratio for each episode and plot reward development (should be similar to green curve in plot_fft_averages)
+        # Comment: reflective reward uses power spectrum instead f just FFT, as the FFts are too peaky to calculate the ward. The PSD balances the peakyness by its window analysis.
         # ToDo: add new reward to h5 file for each episode
         
