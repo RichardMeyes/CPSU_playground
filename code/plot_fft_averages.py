@@ -111,8 +111,8 @@ if __name__ == "__main__":
     margin = 0.1  # Hz
     low_freq1 = freq1 - margin
     high_freq1 = freq1 + margin
-    idx_low1 = int(len(x_cx_fft)*low_freq1/x_cx_fft[-1]) - 1  # -1, becasue the first data point of x_cx_fft is cut for plotting!
-    idx_high1 = int(len(x_cx_fft) * high_freq1 / x_cx_fft[-1]) - 1  # -1, becasue the first data point of x_cx_fft is cut for plotting!
+    idx_low1 = int(len(x_cx_fft)*low_freq1/x_cx_fft[-1]) - 1  # -1, because the first data point of x_cx_fft is cut for plotting!
+    idx_high1 = int(len(x_cx_fft) * high_freq1 / x_cx_fft[-1]) - 1  # -1, because the first data point of x_cx_fft is cut for plotting!
     peak_idx1 = int(len(x_cx_fft)*(low_freq1+high_freq1)/2/x_cx_fft[-1]) - 1
 
     # calculate indexes for frequency band around 2.3 Hz
