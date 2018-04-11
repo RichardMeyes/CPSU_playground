@@ -3,7 +3,7 @@ import numpy as np
 from scipy.fftpack import fft
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-from scipy.signal import butter, filtfilt
+from scipy.signal import butter, filtfilt, welch
 from scipy.stats import pearsonr
 
 
@@ -211,3 +211,4 @@ if __name__ == "__main__":
     plt.show()
 
     # ToDo: check develpment of fraction of the 3.4 Hz in the power spectral density. (integral around 3.4Hz, compare to integral across all frequencies)
+    # ToDo: slight change: check development of PSD peak over time. A) on the scale of single episodes and B) averages time window analysis
