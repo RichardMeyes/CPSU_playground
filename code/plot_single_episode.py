@@ -2,7 +2,7 @@ import h5py
 import numpy as np
 from scipy.fftpack import fft
 import matplotlib.pyplot as plt
-from scipy.signal import butter, filtfilt
+from scipy.signal import butter, filtfilt, welch
 
 
 def butter_bandpass(lowcut, highcut, fs, order=5):
@@ -94,15 +94,49 @@ if __name__ == "__main__":
         x_cx_fft = np.linspace(0, 1 / (2 * dt), N_fft // 2)
 
         # perform FFT on filtered movement data to detect high frequency component
-        cx_filt = butter_bandpass_filter(cx, lowcut=2.0, highcut=5.0, fs=fs, order=5)
+        cx_filt = butter_bandpass_filter(cx, lowcut=2.0, highcut=7.5, fs=fs, order=5)
         cx_filt_fft = fft(cx_filt[s12:])
+        cx_filt_fft = 2 / N_fft * np.abs(cx_filt_fft[1:N_fft // 2])
+
+        # clalculate power spectral density to compare to FFT
+        f, Pxx_den = welch(cx_filt[s12:], fs=fs, nperseg=32)
+        # clalculate power spectrum to compare to FFT
+        f, Pxx_spec = welch(cx_filt[s12:], fs=fs, window='flattop', nperseg=1024, scaling='spectrum')
+
+
+        # calculate amplitude ratio in the FFT spectrum
+        freq1 = 3.4  # Hz
+        margin = 0.1  # Hz
+        low_freq1 = freq1 - margin
+        high_freq1 = freq1 + margin
+        idx_low1 = int(len(x_cx_fft) * low_freq1 / x_cx_fft[
+            -1]) - 1  # -1, because the first data point of x_cx_fft is cut for plotting!
+        idx_high1 = int(len(x_cx_fft) * high_freq1 / x_cx_fft[
+            -1]) - 1  # -1, because the first data point of x_cx_fft is cut for plotting!
+        peak_idx1 = int(len(x_cx_fft) * (low_freq1 + high_freq1) / 2 / x_cx_fft[-1]) - 1
+
+        # calculate indexes for frequency band around 2.3 Hz
+        freq2 = 2.3  # Hz
+        margin = 0.2  # Hz
+        low_freq2 = freq2 - margin
+        high_freq2 = freq2 + margin
+        idx_low2 = int(len(x_cx_fft) * low_freq2 / x_cx_fft[
+            -1]) - 1  # -1, becasue the first data point of x_cx_fft is cut for plotting!
+        idx_high2 = int(len(x_cx_fft) * high_freq2 / x_cx_fft[
+            -1]) - 1  # -1, becasue the first data point of x_cx_fft is cut for plotting!
+        peak_idx2 = int(len(x_cx_fft) * (low_freq2 + high_freq2) / 2 / x_cx_fft[-1]) - 1
+
+        amp_high = np.mean(cx_filt_fft[idx_low1:idx_high1 + 1])
+        amp_low = np.mean(cx_filt_fft[idx_low2:idx_high2 + 1])
+
 
         # create figure
-        fig = plt.figure(figsize=(12, 6))
+        fig = plt.figure(figsize=(15, 6))
         fig.subplots_adjust(top=0.95, bottom=0.1, left=0.12, right=0.95, wspace=0.6)
-        ax1 = plt.subplot2grid((1, 2), (0, 0))
+        ax1 = plt.subplot2grid((1, 3), (0, 0))
         ax2 = plt.twinx(ax1)
-        ax3 = plt.subplot2grid((1, 2), (0, 1))
+        ax3 = plt.subplot2grid((1, 3), (0, 1))
+        ax4 = plt.subplot2grid((1, 3), (0, 2))
 
         # plot data
         line_cp, = ax1.plot(t, cx, lw=2, label='cartpole_x')
@@ -110,13 +144,20 @@ if __name__ == "__main__":
         line_phi, = ax2.plot(t, phi, lw=2, label='angle', color='g')
         line_cp_filt, = ax1.plot(t, cx_filt, lw=2, c='k', label='cartpole_x')
 
+
         # plot segments
         ax2.axhspan(ymin=85, ymax=95, lw=2, ls='--', color='g', alpha=0.3)
         ax1.axvline(x=s12 * dt, lw=2, ls='--', c='k')
 
         # plot FFT
         ax3.plot(x_cx_fft[1:], 2 / N_fft * np.abs(cx_fft[1:N_fft // 2]), lw=2, label='FFT of cartpole_x')
-        ax3.plot(x_cx_fft[1:], 2 / N_fft * np.abs(cx_filt_fft[1:N_fft // 2]), lw=2, c='k', label='FFT of cartpole_x')
+        ax3.plot(x_cx_fft[1:], cx_filt_fft, lw=2, c='k', label='FFT of cartpole_x')
+
+        ax3.axvline(x=freq1, ymin=0, ymax=cx_filt_fft[peak_idx1] / ax3.get_ylim()[1], c='dodgerblue', ls='--')
+        ax3.axvline(x=freq2, ymin=0, ymax=cx_filt_fft[peak_idx2] / ax3.get_ylim()[1], c='darkorange', ls='--')
+        ax3.axhline(y=cx_filt_fft[peak_idx1], xmin=0, xmax=freq1 / x_cx_fft[-1], c='dodgerblue', ls='--')
+        ax3.axhline(y=cx_filt_fft[peak_idx2], xmin=0, xmax=freq2 / x_cx_fft[-1], c='darkorange', ls='--')
+        ax3.set_ylim(ymin=0)
 
         # cosmetics
         ax1.legend(handles=[line_cp, line_py, line_phi])
@@ -132,6 +173,11 @@ if __name__ == "__main__":
         ax3.legend()
         ax3.set_xlabel('frequency [Hz]')
         ax3.set_ylabel('Amplitude')
+
+        ax4.semilogy(f, np.sqrt(Pxx_spec))
+        ax4.set_xlabel('frequency [Hz]')
+        ax4.set_ylabel('PSD [V**2/Hz]')
+        ax4.set_ylabel('Linear spectrum [V RMS]')
 
         # save and close figure
         plt.show()
