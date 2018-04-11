@@ -91,11 +91,20 @@ if __name__ == "__main__":
     x_cx_fft = np.linspace(0, 1 / (2 * dt), N_fft // 2)
 
     cx_fft_episodes = np.zeros((num_episodes, N_fft // 2 - 1))
+    x_Pxx_spec = np.arange(104)
+    Pxx_spec_episodes = np.zeros((num_episodes, len(x_Pxx_spec)))
     for i_episode in range(num_episodes):
         # perform FFT on filtered movement data to detect high frequency component
         cx_filt = butter_bandpass_filter(cx_episodes[i_episode], lowcut=2.0, highcut=7.5, fs=fs, order=5)
         cx_filt_fft = fft(cx_filt[s12:])
         cx_fft_episodes[i_episode] = 2 / N_fft * np.abs(cx_filt_fft[1:N_fft // 2])
+        f, Pxx_spec_episodes[i_episode] = welch(cx_filt[s12:], fs=fs, window='flattop', nperseg=256, scaling='spectrum')
+
+    # calculate power spectrum peak frequencies
+    Pxx_spec_peak_freqs = np.zeros(num_episodes)
+    for i_episode in range(num_episodes):
+        Pxx_spec_peak_idx = np.argwhere(Pxx_spec_episodes[i_episode] == np.max(Pxx_spec_episodes[i_episode]))[0][0]
+        Pxx_spec_peak_freqs[i_episode] = f[Pxx_spec_peak_idx]
 
     # # plot single fft as a test
     # for i_episode in episode_order[::-1]:
@@ -141,9 +150,15 @@ if __name__ == "__main__":
     # calculate data
     avr_ffts = np.zeros((num_window_steps, len(x_cx_fft)-1))
     avr_fft_stds = np.zeros((num_window_steps, len(x_cx_fft) - 1))
+    avr_Pxx_spec_peak_freqs = np.zeros((num_window_steps))
+    med_avr_Pxx_spec_peak_freqs = np.zeros((num_window_steps))
+    avr_Pxx_spec_peak_freq_stds = np.zeros((num_window_steps))
     for i_step in range(num_window_steps):
         avr_ffts[i_step] = np.mean(cx_fft_episodes[i_step*window_step+episode_offset:i_step*window_step+window_size+episode_offset], axis=0)
         avr_fft_stds[i_step] = np.std(cx_fft_episodes[i_step*window_step+episode_offset:i_step*window_step+window_size+episode_offset], axis=0)
+        avr_Pxx_spec_peak_freqs[i_step] = np.mean(Pxx_spec_peak_freqs[i_step * window_step + episode_offset:i_step * window_step + window_size + episode_offset])
+        med_avr_Pxx_spec_peak_freqs[i_step] = np.median(Pxx_spec_peak_freqs[i_step * window_step + episode_offset:i_step * window_step + window_size + episode_offset])
+        avr_Pxx_spec_peak_freq_stds[i_step] = np.std(Pxx_spec_peak_freqs[i_step * window_step + episode_offset:i_step * window_step + window_size + episode_offset])
         amps_high.append(np.mean(avr_ffts[i_step][idx_low1:idx_high1+1]))
         amps_low.append(np.mean(avr_ffts[i_step][idx_low2:idx_high2 + 1]))
         window_rewards.append(np.mean(rewards[episode_order][i_step*window_step+episode_offset: i_step*window_step+window_size+episode_offset]))
@@ -208,7 +223,43 @@ if __name__ == "__main__":
     ax2.set_xlim(xmax=1000)
     ax2.grid()
     ax2.legend(loc=2, handles=[h1, h2, h3])
+
+    # PSD peak over time and vs. reward
+    fig = plt.figure(figsize=(15, 10))
+    fig.subplots_adjust(top=0.95, bottom=0.1, left=0.08, right=0.98, wspace=0.2)
+    ax1 = fig.add_subplot(231)
+    ax2 = fig.add_subplot(232)
+    ax3 = fig.add_subplot(233)
+    ax4 = fig.add_subplot(234)
+    ax5 = fig.add_subplot(235)
+    ax6 = fig.add_subplot(236)
+    ax1.plot(avr_Pxx_spec_peak_freqs, c='r', marker='o', lw=0, alpha=0.5)
+    ax4.plot(med_avr_Pxx_spec_peak_freqs, c='r', marker='o', lw=0, alpha=0.5)
+    ax2.plot(window_rewards[low_border:], avr_Pxx_spec_peak_freqs[low_border:], c='r', marker='o', lw=0, alpha=0.5)
+    ax5.plot(window_rewards[low_border:], med_avr_Pxx_spec_peak_freqs[low_border:], c='r', marker='o', lw=0, alpha=0.5)
+    r1, p1 = pearsonr(window_rewards[low_border:], 3.4 - avr_Pxx_spec_peak_freqs[low_border:])
+    r2, p2 = pearsonr(window_rewards[low_border:], 3.4 - med_avr_Pxx_spec_peak_freqs[low_border:])
+    ax3.plot(window_rewards[low_border:], 3.4 - avr_Pxx_spec_peak_freqs[low_border:], c='r', marker='o', lw=0, alpha=0.5, label='R = {0:.2f}, p = {1:.2E}'.format(r1, p1))
+    ax6.plot(window_rewards[low_border:], 3.4 - med_avr_Pxx_spec_peak_freqs[low_border:], c='r', marker='o', lw=0, alpha=0.5, label='R = {0:.2f}, p = {1:.2E}'.format(r2, p2))
+    for ax in [ax1, ax2, ax3, ax4, ax5, ax6]:
+        ax.grid()
+        if ax in [ax1, ax2, ax4, ax5]:
+            ax.set_ylim(1.5, 4.0)
+        else:
+            ax.set_ylim(ymin=0)
+
+    for ax in [ax1, ax2, ax3, ax4, ax5, ax6]:
+        ax.set_ylabel("averaged PSD peak frequency [Hz]")
+        if ax in [ax3, ax6]:
+            ax.set_ylabel('Delta to target frequency (3.4 Hz)')
+            ax.legend(loc=4)
+        if ax in [ax1, ax4]:
+            ax.set_xlabel("episode window")
+        else:
+            ax.set_xlabel("average reward within episode window")
+
     plt.show()
 
     # ToDo: check develpment of fraction of the 3.4 Hz in the power spectral density. (integral around 3.4Hz, compare to integral across all frequencies)
     # ToDo: slight change: check development of PSD peak over time. A) on the scale of single episodes and B) averages time window analysis
+    # ToDo: chech correlateion of difference between PSD freq peak and target frequency (3.4 Hz or 3.55?) with window reward
