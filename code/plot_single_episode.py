@@ -101,7 +101,7 @@ if __name__ == "__main__":
         # clalculate power spectral density to compare to FFT
         f, Pxx_den = welch(cx_filt[s12:], fs=fs, nperseg=32)
         # clalculate power spectrum to compare to FFT
-        f, Pxx_spec = welch(cx_filt[s12:], fs=fs, window='flattop', nperseg=1024, scaling='spectrum')
+        f, Pxx_spec = welch(cx_filt[s12:], fs=fs, window='hanning', nperseg=64, scaling='spectrum')
 
 
         # calculate amplitude ratio in the FFT spectrum
@@ -174,7 +174,7 @@ if __name__ == "__main__":
         ax3.set_xlabel('frequency [Hz]')
         ax3.set_ylabel('Amplitude')
 
-        ax4.semilogy(f, np.sqrt(Pxx_spec))
+        ax4.semilogy(f[1:], np.sqrt(Pxx_spec[1:]))
         ax4.set_xlabel('frequency [Hz]')
         ax4.set_ylabel('PSD [V**2/Hz]')
         ax4.set_ylabel('Linear spectrum [V RMS]')
