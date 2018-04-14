@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def freq_rew(freqs, f_target, c1, c2, c3):
+def freq_rew(freqs_, f_target_, c1, c2, c3):
     """
 
     :param freqs: array containing the frequencies for which the reward should be evaluated
@@ -21,12 +21,13 @@ def freq_rew(freqs, f_target, c1, c2, c3):
     """
     return c1 * -np.log(c2 * (freqs - f_target) ** 2) + c3
 
+
 if __name__ == "__main__":
 
     f_target = 3.4  # Hz
     margin = 5  # Hz
     freqs = np.linspace(f_target - margin, f_target + margin, 1000, endpoint=True)
-    reward = freq_rew(freqs=freqs, f_target=f_target, c1=81.94, c2=0.2, c3=0)
+    reward = freq_rew(freqs_=freqs, f_target_=f_target, c1=81.94, c2=0.2, c3=0)
     print("maximum reward:", np.max(reward))
 
     zero_point1 = np.where(reward > 0)[0][0]
