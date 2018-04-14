@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 def freq_rew(freqs_, f_target_, c1, c2, c3):
     """
 
-    :param freqs: array containing the frequencies for which the reward should be evaluated
+    :param freqs_: array containing the frequencies for which the reward should be evaluated
 
-    :param f_target: target frequency, which gives the highest reward
+    :param f_target_: target frequency, which gives the highest reward
 
     :param c1: constant that essentially determines the maximum reward at the peak frequency.
     Chosen so that reward_max = 1000
@@ -19,7 +19,7 @@ def freq_rew(freqs_, f_target_, c1, c2, c3):
 
     :return: array containing the calculated reward for the given frequency array
     """
-    return c1 * -np.log(c2 * (freqs - f_target) ** 2) + c3
+    return c1 * -np.log(c2 * (freqs_ - f_target_) ** 2) + c3
 
 
 if __name__ == "__main__":
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     print("maximum reward:", np.max(reward))
 
     zero_point1 = np.where(reward > 0)[0][0]
-    zero_point2 = len(reward) - zero_point1  # symetric function!
+    zero_point2 = len(reward) - zero_point1  # symmetric function!
     zero_reward_freq1 = freqs[zero_point1]
     zero_reward_freq2 = freqs[zero_point2]
     print("frequency range for positive rewards from {0:.2f} to {1:.2f}".format(zero_reward_freq1, zero_reward_freq2))
