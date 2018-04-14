@@ -37,14 +37,14 @@ if __name__ == "__main__":
 
     # plot
     fig = plt.figure(figsize=(10, 5))
-    fig.subplots_adjust(top=0.95, bottom=0.1, left=0.12, right=0.95, wspace=0.2)
+    fig.subplots_adjust(top=0.96, bottom=0.1, left=0.08, right=0.98, wspace=0.2)
     ax = fig.add_subplot(111)
     ax.plot(freqs, reward, lw=3, c='royalblue', zorder=10)
     ax.axvline(x=f_target, lw=3, ls='--', c='orange', label="target frequency: {0} Hz".format(f_target))
     ax.axvline(x=0, lw=2, ls='-', c='k')
     ax.axhline(y=0, lw=2, ls='-', c='k')
     ax.set_ylabel("reward")
-    ax.set_xlabel("frequency")
+    ax.set_xlabel("frequency [Hz]")
     ax.grid()
     ax.legend()
     plt.show()
