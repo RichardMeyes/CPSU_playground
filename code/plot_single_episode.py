@@ -3,6 +3,7 @@ import numpy as np
 from scipy.fftpack import fft
 import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt, welch
+from plot_frequency_reward_component import freq_rew
 
 
 def butter_bandpass(lowcut, highcut, fs, order=5):
@@ -105,6 +106,8 @@ if __name__ == "__main__":
 
         # find peak frequency
         peak_idx = np.argwhere(Pxx_spec == np.max(Pxx_spec))[0][0]
+        # calculate reward depending on power spectrum and peak frequency
+        reflection_reward = freq_rew(freqs_=f, f_target_=3.4, function='combined')[peak_idx]
 
         # create figure
         fig = plt.figure(figsize=(16, 6))
@@ -133,7 +136,7 @@ if __name__ == "__main__":
         ax1.set_xlabel('time [s]')
         ax1.set_ylabel('normalized cart_x position')
         ax2.set_ylabel('phi [degrees]')
-        ax1.set_title('episode_ID: {0}, maximum reward: {1}'.format(i_episode + 1, rewards[i_episode]))
+        ax1.set_title('episode_ID: {0}, maximum reward: {1:.4f}'.format(i_episode + 1, rewards[i_episode]))
         ax2.set_ylim(-180, 180)
         ax2.set_yticks(np.arange(-180, 181, 45))
         ax1.set_xticks(np.arange(0, 17.6, 2.5))
@@ -148,14 +151,10 @@ if __name__ == "__main__":
         ax4.set_xlabel('frequency [Hz]')
         ax4.set_ylabel('PSD [V**2/Hz]')
         ax4.set_ylabel('Linear spectrum [V RMS]')
+        ax4.set_title('reflection reward: {0:.4f}'.format(reflection_reward))
         ax4.legend()
 
         # save and close figure
         plt.show()
         # plt.savefig("../pics/cp_episode_{0}".format(i_episode))
-        plt.close()
-
-        # ToDo: calculate reflection reward depending on amplitude ratio for each episode and plot reward development (should be similar to green curve in plot_fft_averages)
-        # Comment: reflective reward uses power spectrum instead f just FFT, as the FFts are too peaky to calculate the ward. The PSD balances the peakyness by its window analysis.
-        # ToDo: add new reward to h5 file for each episode
-        
+        plt.close() 
