@@ -37,6 +37,12 @@ def freq_rew(freqs_, f_target_, function):
         c3 = 0
         log = c1 * -np.log(c2 * (freqs_ - f_target_) ** 2) + c3
 
+        """
+        combination is made at the zero points of the gaussian function. The merging of the logarithmic function could
+        be made earlier towards the target frequency in order to push the development of the target frequency more.
+        Some experimentation is needed to find out what reward shape is best.
+        """
+
         combined = np.zeros(len(freqs_))
         combined[:zp1] = log[:zp1]
         combined[zp1:zp2] = gaussian[zp1:zp2]

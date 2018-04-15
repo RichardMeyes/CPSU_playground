@@ -157,4 +157,4 @@ if __name__ == "__main__":
         # save and close figure
         plt.show()
         # plt.savefig("../pics/cp_episode_{0}".format(i_episode))
-        plt.close() 
+        plt.close()
