@@ -104,6 +104,10 @@ if __name__ == "__main__":
         # clalculate power spectrum to compare to FFT
         f, Pxx_spec = welch(cx_filt[s12:], fs=fs, window='flattop', nperseg=128, scaling='spectrum')
 
+        # deal with boundary effects
+        Pxx_spec = Pxx_spec[5:-5]  # cut off beginning and end because of boarder effect from the time window analysis
+        f = f[5:-5]
+
         # find peak frequency
         peak_idx = np.argwhere(Pxx_spec == np.max(Pxx_spec))[0][0]
         # calculate reward depending on power spectrum and peak frequency
@@ -115,7 +119,7 @@ if __name__ == "__main__":
         ax1 = plt.subplot2grid((1, 4), (0, 0), colspan=2)
         ax2 = plt.twinx(ax1)
         ax3 = plt.subplot2grid((1, 4), (0, 2))
-        ax4 = plt.subplot2grid((1, 4), (0, 3))
+        ax4 = plt.subplot2grid((1, 4), (0, 3), sharex=ax3)
 
         # plot data
         line_cp, = ax1.plot(t, cx, lw=2, label='cartpole_x')
@@ -132,7 +136,7 @@ if __name__ == "__main__":
         ax3.plot(x_cx_fft[1:], cx_filt_fft, lw=2, c='k', label='FFT of filtered cartpole_x')
 
         # cosmetics
-        ax1.legend(handles=[line_cp, line_py, line_phi])
+        ax1.legend(handles=[line_cp, line_py, line_phi], loc=4)
         ax1.set_xlabel('time [s]')
         ax1.set_ylabel('normalized cart_x position')
         ax2.set_ylabel('phi [degrees]')
@@ -142,17 +146,17 @@ if __name__ == "__main__":
         ax1.set_xticks(np.arange(0, 17.6, 2.5))
         ax1.set_yticks(np.arange(-1.0, 1.1, 0.25))
 
-        ax3.legend()
+        ax3.legend(loc=1)
         ax3.set_xlabel('frequency [Hz]')
         ax3.set_ylabel('Amplitude')
 
-        ax4.semilogy(f, np.sqrt(Pxx_spec), color='k', label='power spectrum of cartpole_x')
+        ax4.semilogy(f, np.sqrt(Pxx_spec), color='k', label='power spectrum of cp_x')
         ax4.axvline(x=f[peak_idx], lw=2, ls='--', color='red', label='peak frequency: {0:.2f} Hz'.format(f[peak_idx]))
         ax4.set_xlabel('frequency [Hz]')
         ax4.set_ylabel('PSD [V**2/Hz]')
         ax4.set_ylabel('Linear spectrum [V RMS]')
         ax4.set_title('reflection reward: {0:.4f}'.format(reflection_reward))
-        ax4.legend()
+        ax4.legend(loc=4)
 
         # save and close figure
         plt.show()
