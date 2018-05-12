@@ -259,7 +259,3 @@ if __name__ == "__main__":
             ax.set_xlabel("average reward within episode window")
 
     plt.show()
-
-    # ToDo: check develpment of fraction of the 3.4 Hz in the power spectral density. (integral around 3.4Hz, compare to integral across all frequencies)
-    # ToDo: slight change: check development of PSD peak over time. A) on the scale of single episodes and B) averages time window analysis
-    # ToDo: chech correlateion of difference between PSD freq peak and target frequency (3.4 Hz or 3.55?) with window reward
